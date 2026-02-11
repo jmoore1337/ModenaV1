@@ -1,0 +1,86 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODENA BACKEND - PYTHON DEPENDENCIES
+# ═══════════════════════════════════════════════════════════════════════════════
+# Install with: pip install -r requirements.txt
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# WEB FRAMEWORK
+# ─────────────────────────────────────────────────────────────────────────────────
+fastapi==0.104.1
+# WHY FastAPI?
+#   - Async support (fast concurrent scraping)
+#   - Auto-generates OpenAPI docs at /docs
+#   - Type hints = fewer bugs
+#   - Modern Python, widely used
+
+uvicorn==0.24.0
+# WHY Uvicorn?
+#   - ASGI server that runs FastAPI
+#   - Production-ready, handles async
+#   - Like "gunicorn" but for async Python
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# DATABASE
+# ─────────────────────────────────────────────────────────────────────────────────
+sqlalchemy==2.0.23
+# WHY SQLAlchemy?
+#   - ORM (Object Relational Mapper)
+#   - Write Python classes, it generates SQL
+#   - Works with your RDS PostgreSQL
+
+psycopg2-binary==2.9.9
+# WHY psycopg2?
+#   - PostgreSQL adapter for Python
+#   - SQLAlchemy uses this to talk to YOUR RDS
+#   - "-binary" = pre-compiled, easier install
+
+alembic==1.12.1
+# WHY Alembic?
+#   - Database migrations
+#   - When you change models, Alembic updates the DB schema
+#   - Like "terraform" but for database tables
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# DOMAIN SCANNING
+# ─────────────────────────────────────────────────────────────────────────────────
+dnspython==2.4.2
+# WHY dnspython?
+#   - DNS record lookups (A, AAAA, MX, TXT, NS, CNAME)
+#   - Pure Python, no system dependencies
+
+python-whois==0.8.0
+# WHY python-whois?
+#   - WHOIS data (registrar, creation date, expiry)
+#   - Parses messy WHOIS responses into structured data
+
+requests==2.31.0
+# WHY requests?
+#   - HTTP requests for subdomain enumeration
+#   - Check if subdomains respond
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# UTILITIES
+# ─────────────────────────────────────────────────────────────────────────────────
+pydantic==2.5.2
+pydantic-settings==2.1.0
+# WHY Pydantic?
+#   - Data validation
+#   - FastAPI uses it for request/response schemas
+#   - pydantic-settings reads environment variables
+
+python-dotenv==1.0.0
+# WHY python-dotenv?
+#   - Loads .env file for local development
+#   - In K8s, environment comes from ConfigMaps/Secrets
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# TESTING
+# ─────────────────────────────────────────────────────────────────────────────────
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+# WHY these?
+#   - pytest runs tests
+#   - pytest-asyncio handles async tests
+#   - httpx is async HTTP client for testing FastAPI

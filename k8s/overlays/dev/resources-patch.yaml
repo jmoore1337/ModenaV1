@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# resources-patch.yaml - DEV environment resource limits
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# WHY PATCH RESOURCES?
+# ────────────────────
+# DEV: Small resources (save money, single user testing)
+# PROD: Large resources (handle real traffic, HA)
+#
+# REQUESTS vs LIMITS:
+# ───────────────────
+# requests: "I need at least this much" (guaranteed)
+# limits: "Don't let me use more than this" (cap)
+#
+# UNITS:
+# ──────
+# CPU: 1000m = 1 CPU core, 250m = 0.25 cores
+# Memory: Mi = mebibytes, Gi = gibibytes
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Backend patch
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  template:
+    spec:
+      containers:
+        - name: backend
+          resources:
+            requests:
+              memory: "128Mi"    # DEV: Small
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+
+---
+# Frontend patch - COMMENTED OUT (frontend deployment not yet available)
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: frontend
+# spec:
+#   template:
+#     spec:
+#       containers:
+#         - name: frontend
+#           resources:
+#             requests:
+#               memory: "128Mi"    # DEV: Small
+#               cpu: "100m"
+#             limits:
+#               memory: "256Mi"
+#               cpu: "250m"

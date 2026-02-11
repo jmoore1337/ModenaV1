@@ -1,0 +1,170 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// Jenkinsfile - Main CI/CD Pipeline for Modena
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// WHAT THIS FILE DOES:
+// ────────────────────
+// Defines the ENTIRE build and deploy process.
+// When you push code to GitHub, this pipeline runs automatically.
+//
+// STAGES:
+// ───────
+// 1. CHECKOUT     → Pull latest code from GitHub
+// 2. BUILD        → Build Docker images for frontend and backend
+// 3. TEST         → Run unit tests
+// 4. SCAN         → Security scan with Checkov
+// 5. PUSH         → Push images to ECR
+// 6. DEPLOY DEV   → Deploy to DEV environment (automatic)
+// 7. DEPLOY STAGE → Deploy to STAGE environment (automatic)
+// 8. DEPLOY PROD  → Deploy to PROD environment (manual approval required)
+// ═══════════════════════════════════════════════════════════════════════════
+
+pipeline {
+    agent any
+    
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_REGISTRY = '730335375020.dkr.ecr.us-east-1.amazonaws.com'
+        IMAGE_TAG = "${env.GIT_COMMIT.take(7)}"    // First 7 chars of commit hash
+        EKS_CLUSTER = 'modena-dev-eks'
+    }
+    
+    stages {
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 1: CHECKOUT
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "Building commit: ${env.GIT_COMMIT}"
+                echo "Image tag: ${IMAGE_TAG}"
+            }
+        }
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 2: BUILD DOCKER IMAGES
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Build') {
+            steps {
+                sh '''
+                    echo "Building backend image..."
+                    docker build -t modena-backend:${IMAGE_TAG} ./app/backend
+
+                    echo "Building frontend image..."
+                    # docker build -t modena-frontend:${IMAGE_TAG} ./app/frontend
+                '''
+            }
+        }
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 3: RUN TESTS
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Test') {
+            steps {
+                sh '''
+                    echo "Running backend tests..."
+                    docker run --rm modena-backend:${IMAGE_TAG} pytest tests/
+                '''
+            }
+        }
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 4: PUSH TO ECR
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Push to ECR') {
+            steps {
+                sh '''
+                    echo "=== Logging into ECR ==="
+                    # Login to ECR
+                    aws ecr get-login-password --region ${AWS_REGION} | \
+                        docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                    
+                    echo "=== Pushing Backend Image ==="
+                    # Tag and push backend
+                    docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG}
+                    docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:latest
+                    docker push ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG}
+                    docker push ${ECR_REGISTRY}/modena-dev-backend:latest
+
+
+                    
+                    # echo "=== Pushing Frontend Image ==="
+                    # Frontend not yet in git, skipping push
+                    # Tag and push frontend
+                    # docker tag modena-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-frontend:${IMAGE_TAG}
+                    # docker tag modena-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-frontend:latest
+                    # docker push ${ECR_REGISTRY}/modena-dev-frontend:${IMAGE_TAG}
+                    # docker push ${ECR_REGISTRY}/modena-dev-frontend:latest
+                '''
+            }
+        }
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 5: DEPLOY TO DEV (Automatic)
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Deploy to DEV') {
+            steps {
+                sh '''
+                    echo "=== Configuring kubectl ==="
+                    # Update kubeconfig for DEV cluster
+                    aws eks update-kubeconfig --name ${EKS_CLUSTER} --region ${AWS_REGION}
+                    
+                    echo "=== Deploying with Kustomize ==="
+                    # Deploy using Kustomize
+                    kubectl apply -k k8s/overlays/dev/
+                    
+                    
+                    echo "=== Waiting for Rollout to Complete ==="
+                    # Wait for rollout to complete
+                    kubectl rollout status deployment/backend -n modena-dev --timeout=300s
+                    # kubectl rollout status deployment/frontend -n modena-dev --timeout=300s  # TODO: Uncomment when frontend ready
+                '''
+            }
+        }
+        
+        /* ─────────────────────────────────────────────────────────────────────
+        // STAGE 6: DEPLOY TO STAGE (Automatic)
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Deploy to STAGE') {
+            steps {
+                sh '''
+                    aws eks update-kubeconfig --name ${EKS_CLUSTER} --region ${AWS_REGION}
+                    kubectl apply -k k8s/overlays/stage/
+                    kubectl rollout status deployment/backend -n modena-stage --timeout=300s
+                    # kubectl rollout status deployment/frontend -n modena-stage --timeout=300s  # TODO: Uncomment when frontend ready
+                '''
+            }
+        }
+        
+        // ─────────────────────────────────────────────────────────────────────
+        // STAGE 7: DEPLOY TO PROD (Manual Approval Required)
+        // ─────────────────────────────────────────────────────────────────────
+        stage('Deploy to PROD') {
+            steps {
+                // This pauses the pipeline and waits for human approval
+                input message: 'Deploy to PRODUCTION?', ok: 'Yes, deploy to prod'
+                
+                sh '''
+                    aws eks update-kubeconfig --name ${EKS_CLUSTER} --region ${AWS_REGION}
+                    kubectl apply -k k8s/overlays/prod/
+                    kubectl rollout status deployment/backend -n modena-prod --timeout=300s
+                    # kubectl rollout status deployment/frontend -n modena-prod --timeout=300s  # TODO: Uncomment when frontend ready
+                '''
+            }
+        }*/
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // POST-BUILD ACTIONS
+    // ─────────────────────────────────────────────────────────────────────────
+    post {
+        success {
+            echo ' ✅ Pipeline completed successfully!'
+            // slackSend(color: 'good', message: "Deployed ${env.GIT_COMMIT}")
+        }
+        failure {
+            echo ' ❌ Pipeline failed!'
+            // slackSend(color: 'danger', message: "Build failed: ${env.BUILD_URL}")
+        }
+    }
+}

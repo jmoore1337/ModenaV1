@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# kustomization.yaml - Tells Kustomize what files to include
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# When you run: kubectl apply -k k8s/base/
+# Kustomize reads this file to know what to deploy.
+#
+# ORDER MATTERS for dependencies:
+# 1. Namespace first (everything goes in it)
+# 2. ConfigMap (deployments reference it)
+# 3. Deployments (create the pods)
+# 4. Services (expose the pods)
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - deployment-backend.yaml
+  # - deployment-frontend.yaml  # TODO: Uncomment after frontend pipeline is complete
+  - service-backend.yaml
+  # - service-frontend.yaml      # TODO: Uncomment after frontend pipeline is complete
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMMON LABELS
+# ─────────────────────────────────────────────────────────────────────────────
+# These labels get added to ALL resources.
+# Useful for filtering: kubectl get all -l app=modena
+# ─────────────────────────────────────────────────────────────────────────────
+commonLabels:
+  app: modena

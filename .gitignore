@@ -1,0 +1,36 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.log
+
+# Local development & documentation (keep locally, don't commit)
+# - Interview prep notes
+# - Architecture diagrams & visuals
+# - Learning guides & reference docs
+# - Real-world scenarios & examples
+architecture-diagrams/
+**/ARCHITECTURE*.md
+**/GENERIC*.md
+**/IAM-SECRETS*.md
+**/SECRETS-IAM*.md
+**/CLOUDWATCH*.md
+**/DEVOPS*.md
+**/DEPLOY*.md
+**/DEBUGGING*.md
+**/DELIVERABLES*.md
+**/IMPLEMENTATION*.md
+**/MODENA-ARCHITECTURE*.md
+**/Keep-*.md
+**/DSNY*.txt
+**/REAL-WORLD*.pdf
+**/REAL-WORLD*.pdf
+**/START-HERE.md
+**/WHAT-YOU*.md
+**/SECURITY-PIPELINE*.md
+
+# Keep these (actual infrastructure code):
+!requirements.txt
+!Dockerfile
+!*.tf
+!*.tfvars

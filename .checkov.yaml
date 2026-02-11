@@ -1,0 +1,73 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHECKOV CONFIGURATION FILE
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# WHAT THIS FILE DOES:
+# Configures which Checkov rules to skip and which directories to scan.
+#
+# WHY SKIP RULES?
+# Some Checkov rules don't apply to your situation or create false positives.
+# For example, if you INTENTIONALLY have a public S3 bucket for static website
+# hosting, you'd skip that rule for that specific resource.
+#
+# INTERVIEW TIP:
+# "We document why each rule is skipped. Skipping without justification is
+# a red flag in audits. Each skip has a ticket or comment explaining why."
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Directories to scan
+directory:
+  - terraform/
+
+# Framework to use
+framework:
+  - terraform
+
+# Output format
+output:
+  - cli
+
+# Soft fail (warn but don't fail pipeline) - remove in production!
+soft-fail: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SKIP RULES: Rules to ignore
+# ─────────────────────────────────────────────────────────────────────────────
+# Format: CKV_AWS_XXXX: "Reason for skipping"
+#
+# IMPORTANT: Every skip MUST have justification!
+# Auditors will ask why you skipped each one.
+# ─────────────────────────────────────────────────────────────────────────────
+skip-check:
+  # Skip: "Ensure S3 bucket has versioning enabled"
+  # Reason: Terraform state bucket already has versioning via backend config
+  - CKV_AWS_21
+  
+  # Skip: "Ensure all data stored in S3 bucket is securely encrypted at rest"
+  # Reason: Using AWS-managed encryption which Checkov doesn't detect
+  - CKV_AWS_19
+  
+  # Skip: "Ensure EKS Cluster has Secrets Encryption enabled"
+  # Reason: Will enable in production, not needed for dev environment
+  # TODO: Remove this skip when enabling for prod
+  - CKV_AWS_58
+  
+  # Skip: "Ensure AWS RDS database instance is not publicly accessible"
+  # Reason: False positive - our RDS IS in private subnets
+  - CKV_AWS_17
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EXTERNAL CHECKS: Additional custom policies (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+# external-checks-dir:
+#   - ./custom-checks/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPACT OUTPUT: Only show failed checks
+# ─────────────────────────────────────────────────────────────────────────────
+compact: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# QUIET: Suppress passed checks output
+# ─────────────────────────────────────────────────────────────────────────────
+quiet: true

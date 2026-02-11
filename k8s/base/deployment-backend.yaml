@@ -1,0 +1,132 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# deployment-backend.yaml - Defines how to run the backend pods. 
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# WHAT IS A DEPLOYMENT?
+# ─────────────────────
+# A Deployment tells Kubernetes:
+#   • What container image to run
+#   • How many replicas (copies) to run
+#   • What resources (CPU/memory) to allocate
+#   • How to health check the pods
+#   • How to update pods (rolling update)
+#
+# WHAT IS A POD?
+# ──────────────
+# A Pod is the smallest unit in Kubernetes.
+# It contains one or more containers.
+# Usually one container per pod (your app).
+#
+# The Deployment CREATES and MANAGES pods.
+# If a pod dies, the Deployment creates a new one.
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: modena
+    component: backend
+spec:
+  replicas: 1    # ← This will be OVERRIDDEN by overlays (dev=1, prod=3)
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # SELECTOR
+  # ─────────────────────────────────────────────────────────────────────────
+  # This tells the Deployment which pods it manages.
+  # It looks for pods with label "component: backend"
+  # ─────────────────────────────────────────────────────────────────────────
+  selector:
+    matchLabels:
+      component: backend
+  
+  template:
+    metadata:
+      labels:
+        app: modena
+        component: backend    # ← Must match selector above
+    
+    spec:
+      containers:
+        - name: backend
+          # ───────────────────────────────────────────────────────────────────
+          # IMAGE
+          # ───────────────────────────────────────────────────────────────────
+          # This is a PLACEHOLDER. Overlays will replace this with:
+          #   123456789.dkr.ecr.us-east-1.amazonaws.com/modena-backend:dev-abc123
+          # ───────────────────────────────────────────────────────────────────
+          image: PLACEHOLDER    # ← Replaced by overlay
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000    # FastAPI runs on 8000
+          
+          # ───────────────────────────────────────────────────────────────────
+          # ENVIRONMENT VARIABLES
+          # ───────────────────────────────────────────────────────────────────
+          # These configure the app at runtime.
+          # Secrets come from AWS Secrets Manager (not hardcoded).
+          # ───────────────────────────────────────────────────────────────────
+          env:
+            - name: ENVIRONMENT
+              value: "dev"
+            - name: DATABASE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: modena-config
+                  key: db_host
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: modena-config
+                  key: db_port
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: modena-config
+                  key: db_name
+            - name: DATABASE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: modena-config
+                  key: db_user
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: modena-secrets
+                  key: database-password
+          
+          # ───────────────────────────────────────────────────────────────────
+          # RESOURCES
+          # ───────────────────────────────────────────────────────────────────
+          # Requests = minimum guaranteed
+          # Limits = maximum allowed
+          # These will be OVERRIDDEN by overlays (dev=small, prod=large)
+          # ───────────────────────────────────────────────────────────────────
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          # ───────────────────────────────────────────────────────────────────
+          # HEALTH CHECKS
+          # ───────────────────────────────────────────────────────────────────
+          # Kubernetes uses these to know if your app is healthy.
+          # If health check fails, Kubernetes restarts the pod.
+          # ───────────────────────────────────────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

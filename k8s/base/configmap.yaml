@@ -1,0 +1,47 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# configmap.yaml - Non-sensitive configuration
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# WHAT IS A CONFIGMAP?
+# ────────────────────
+# Stores configuration data as key-value pairs.
+# Pods read these values as environment variables.
+#
+# CONFIGMAP vs SECRET:
+# ────────────────────
+# ConfigMap: Non-sensitive (hostnames, ports, feature flags)
+# Secret: Sensitive (passwords, API keys, certificates)
+#
+# WHY NOT HARDCODE IN DEPLOYMENT?
+# ───────────────────────────────
+# • Change config without rebuilding images
+# • Same image, different config per environment
+# • Separation of concerns
+#
+# Your Dsny connection: Similar to how Terraform variables work -
+# define once, override per environment.
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: modena-config
+  labels:
+    app: modena
+data:
+  # ─────────────────────────────────────────────────────────────────────────
+  # DATABASE CONFIG
+  # ─────────────────────────────────────────────────────────────────────────
+  # These get injected into pods as environment variables.
+  # The actual RDS endpoint will be set per environment.
+  # ─────────────────────────────────────────────────────────────────────────
+  db_host: "modena-dev-db.cetosysiae5v.us-east-1.rds.amazonaws.com"    # ← UPDATE with your RDS endpoint!
+  db_port: "5432"
+  db_name: "modena"
+  db_user: "modena_admin"
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # APPLICATION CONFIG
+  # ─────────────────────────────────────────────────────────────────────────
+  log_level: "INFO"
+  environment: "dev"

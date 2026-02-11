@@ -1,0 +1,67 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# deployment-frontend.yaml - React app served by nginx
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This runs your React TypeScript frontend.
+# The React app is built into static files, served by nginx.
+#
+# FLOW:
+# ─────
+# User → Ingress → Frontend Service → Frontend Pod (nginx) → static files
+#                                            ↓
+#                                     API calls to backend
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: modena
+    component: frontend
+spec:
+  replicas: 1
+  
+  selector:
+    matchLabels:
+      component: frontend
+  
+  template:
+    metadata:
+      labels:
+        app: modena
+        component: frontend
+    
+    spec:
+      containers:
+        - name: frontend
+          image: PLACEHOLDER-FRONTEND
+          
+          ports:
+            - containerPort: 80
+          
+          env:
+            - name: REACT_APP_API_URL
+              value: "http://backend:8000"
+          
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

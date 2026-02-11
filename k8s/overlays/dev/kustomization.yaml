@@ -1,0 +1,43 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# kustomization.yaml for DEV environment
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This file says:
+#   1. Start with everything in ../../base
+#   2. Override namespace to modena-dev
+#   3. Replace PLACEHOLDER images with real ECR URLs
+#   4. Apply patches for dev-specific settings
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ─────────────────────────────────────────────────────────────────────────────
+# START WITH BASE
+# ─────────────────────────────────────────────────────────────────────────────
+resources:
+  - ../../base
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SET NAMESPACE
+# ─────────────────────────────────────────────────────────────────────────────
+namespace: modena-dev
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OVERRIDE IMAGES
+# ─────────────────────────────────────────────────────────────────────────────
+# This replaces PLACEHOLDER images in base with real ECR URLs
+images:
+  - name: PLACEHOLDER
+    newName: 730335375020.dkr.ecr.us-east-1.amazonaws.com/modena-dev-backend
+    newTag: dev-latest
+  # - name: PLACEHOLDER-FRONTEND          # TODO: Uncomment when frontend pipeline ready
+  #   newName: 730335375020.dkr.ecr.us-east-1.amazonaws.com/modena-dev-frontend
+  #   newTag: dev-latest
+
+# ─────────────────────────────────────────────────────────────────────────────
+# APPLY PATCHES
+# ─────────────────────────────────────────────────────────────────────────────
+patches:
+  - path: replicas-patch.yaml
+  - path: resources-patch.yaml

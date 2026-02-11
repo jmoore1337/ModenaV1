@@ -1,0 +1,56 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# service-backend.yaml - Internal load balancer for backend pods
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# WHAT IS A SERVICE?
+# ──────────────────
+# Pods get random IPs that change when they restart.
+# A Service gives a STABLE IP/DNS name to reach your pods.
+#
+# ANALOGY (from your Dsny experience):
+# ──────────────────────────────────────
+# Remember ALB Target Groups? A Service is similar:
+#   ALB Target Group  →  Routes traffic to EC2 instances
+#   K8s Service       →  Routes traffic to Pods
+#
+# SERVICE TYPES:
+# ──────────────
+# • ClusterIP (default): Internal only, other pods can reach it
+# • NodePort: Exposes on each node's IP at a static port
+# • LoadBalancer: Creates external AWS ALB/NLB
+#
+# We use ClusterIP because:
+#   Frontend Service → talks to → Backend Service (internal)
+#   Ingress (later)  → exposes  → Frontend to internet
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels:
+    app: modena
+    component: backend
+spec:
+  type: ClusterIP
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # PORTS
+  # ─────────────────────────────────────────────────────────────────────────
+  # port: What OTHER services use to connect (service:8000)
+  # targetPort: What your CONTAINER listens on (FastAPI's port)
+  # ─────────────────────────────────────────────────────────────────────────
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  
+  # ─────────────────────────────────────────────────────────────────────────
+  # SELECTOR
+  # ─────────────────────────────────────────────────────────────────────────
+  # "Route traffic to any pod with label component: backend"
+  # This MUST match the labels in deployment-backend.yaml
+  # ─────────────────────────────────────────────────────────────────────────
+  selector:
+    component: backend

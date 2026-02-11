@@ -1,0 +1,10 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# replicas-patch.yaml - DEV only needs 1 replica
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1    # ← DEV: 1 replica (save money)

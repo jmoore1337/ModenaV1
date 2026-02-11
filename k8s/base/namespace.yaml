@@ -1,0 +1,25 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# namespace.yaml - Creates an isolated environment for Modena resources
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# WHAT IS A NAMESPACE?
+# ────────────────────
+# Think of it like a folder in your computer.
+# It groups related resources together and isolates them from others.
+#
+# WHY USE NAMESPACES?
+# ───────────────────
+# • Isolation: dev resources can't accidentally affect prod
+# • Organization: `kubectl get pods -n modena-dev` shows only your stuff
+# • Resource quotas: Limit CPU/memory per namespace
+# • RBAC: Control who can access what namespace
+#
+# At Dsny, each team had their own namespace (bymx-dev, bymx-prod, etc.)
+# ═══════════════════════════════════════════════════════════════════════════
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: modena    # ← Overlays will override this (modena-dev, modena-prod)
+  labels:
+    app: modena

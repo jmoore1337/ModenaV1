@@ -1,0 +1,120 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# docker-compose.yml - Local Development Stack
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# WHY THIS FILE?
+# ──────────────
+# Defines all services needed for local development:
+# - PostgreSQL database (backend depends on this)
+# - FastAPI backend (Python)
+# - React frontend (Node.js)
+#
+# HOW TO USE:
+# ───────────
+# docker-compose up -d        # Start all services in background
+# docker-compose logs -f api  # Watch backend logs
+# docker-compose down         # Stop all services
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────────────────────────────────────
+  # WHY postgres first?
+  # - Backend depends on it
+  # - Must exist before backend container starts
+  # - Uses depends_on in backend service to ensure ordering
+  # ─────────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: modena-postgres
+    environment:
+      POSTGRES_USER: modena_admin
+      POSTGRES_PASSWORD: modena_password_dev
+      POSTGRES_DB: modena
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount a volume so data persists when container stops
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U modena_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - modena-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FastAPI Backend
+  # ─────────────────────────────────────────────────────────────────────────────
+  # WHY depends_on?
+  # - Ensures postgres starts first
+  # - But does NOT guarantee postgres is READY
+  # - That's why postgres has healthcheck above
+  # ─────────────────────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./app/backend
+      dockerfile: Dockerfile
+    container_name: modena-api
+    environment:
+      # These match what app/backend/app/config.py expects
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: modena_admin
+      DATABASE_PASSWORD: modena_password_dev
+      DATABASE_NAME: modena
+      ENVIRONMENT: dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      # Mount source code for hot reload during development
+      - ./app/backend:/app
+    networks:
+      - modena-network
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # React Frontend
+  # ─────────────────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./app/frontend
+      dockerfile: Dockerfile
+    container_name: modena-frontend
+    environment:
+      # Frontend can call backend at http://api:8000
+      REACT_APP_API_URL: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    command: npm start
+    volumes:
+      # Mount source code for hot reload
+      - ./app/frontend:/app
+      - /app/node_modules
+    networks:
+      - modena-network
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Network: Allows containers to communicate by service name
+# ─────────────────────────────────────────────────────────────────────────────────
+# Example: Backend can reach database at "postgres:5432" (not localhost:5432)
+networks:
+  modena-network:
+    driver: bridge
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# Volume: Persistent storage for PostgreSQL data
+# ─────────────────────────────────────────────────────────────────────────────────
+# Without this, database data disappears when container stops
+volumes:
+  postgres_data:
+    driver: local
