@@ -147,7 +147,7 @@ module "rds" {
   skip_final_snapshot = true   # Don't wait for snapshot on destroy
   deletion_protection = false  # Allow easy cleanup
   
-  # Security - will add EKS security group here later
+  # Security - will add EKS security group here later.
   # allowed_security_group_ids = [module.eks.node_security_group_id]
   
   tags = {
