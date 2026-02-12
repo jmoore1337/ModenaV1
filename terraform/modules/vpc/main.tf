@@ -58,7 +58,7 @@ resource "aws_subnet" "public" {
     Type = "public"
     # These tags are REQUIRED for EKS to find subnets for ALB
     "kubernetes.io/role/elb" = "1"
-    "kubernetes.io/cluster/modena-${var.environment}-cluster" = "shared"
+    "kubernetes.io/cluster/modena-${var.environment}-eks" = "shared"
   })
 }
 
@@ -81,7 +81,7 @@ resource "aws_subnet" "private" {
     Type = "private"
     # These tags are REQUIRED for EKS to find subnets for internal load balancers
     "kubernetes.io/role/internal-elb" = "1"
-    "kubernetes.io/cluster/modena-${var.environment}-cluster" = "shared"
+    "kubernetes.io/cluster/modena-${var.environment}-eks" = "shared"
   })
 }
 
