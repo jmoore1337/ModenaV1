@@ -30,7 +30,7 @@ namespace: modena-dev
 images:
   - name: PLACEHOLDER
     newName: 730335375020.dkr.ecr.us-east-1.amazonaws.com/modena-dev-backend
-    newTag: dev-latest
+    newTag: latest
   # - name: PLACEHOLDER-FRONTEND          # TODO: Uncomment when frontend pipeline ready
   #   newName: 730335375020.dkr.ecr.us-east-1.amazonaws.com/modena-dev-frontend
   #   newTag: dev-latest
