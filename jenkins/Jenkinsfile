@@ -73,31 +73,23 @@ pipeline {
         // ─────────────────────────────────────────────────────────────────────
         stage('Push to ECR') {
             steps {
-                sh '''
-                    echo "=== Logging into ECR ==="
-                    # Login to ECR
-                    aws ecr get-login-password --region ${AWS_REGION} | \
-                        docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                    
-                    echo "=== Pushing Backend Image ==="
-                    # Tag and push backend
-                    docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG}
-                    docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:latest
-                    docker push ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG}
-                    docker push ${ECR_REGISTRY}/modena-dev-backend:latest
+                 sh '''
+            echo "=== Logging into ECR ==="
+            aws ecr get-login-password --region ${AWS_REGION} | \
+                docker login --username AWS --password-stdin ${ECR_REGISTRY}
+            
+            echo "=== Pushing Backend Image ==="
+            docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG}
+            docker tag modena-backend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-backend:latest
 
+            # Push immutable SHA tag — ignore if it already exists
+            docker push ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG} || true
 
-                    
-                    # echo "=== Pushing Frontend Image ==="
-                    # Frontend not yet in git, skipping push
-                    # Tag and push frontend
-                    # docker tag modena-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-frontend:${IMAGE_TAG}
-                    # docker tag modena-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/modena-dev-frontend:latest
-                    # docker push ${ECR_REGISTRY}/modena-dev-frontend:${IMAGE_TAG}
-                    # docker push ${ECR_REGISTRY}/modena-dev-frontend:latest
-                '''
-            }
+            # Always push latest
+            docker push ${ECR_REGISTRY}/modena-dev-backend:latest
+        '''
         }
+     }
         
         // ─────────────────────────────────────────────────────────────────────
         // STAGE 5: DEPLOY TO DEV (Automatic)
@@ -137,7 +129,7 @@ pipeline {
         }
         
         // ─────────────────────────────────────────────────────────────────────
-        // STAGE 7: DEPLOY TO PROD (Manual Approval Required)
+        // STAGE 7: DEPLOY TO PROD (Manual Approval Required..)
         // ─────────────────────────────────────────────────────────────────────
         stage('Deploy to PROD') {
             steps {

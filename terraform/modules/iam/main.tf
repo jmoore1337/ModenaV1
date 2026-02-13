@@ -62,7 +62,7 @@ resource "aws_iam_instance_profile" "eks_node_instance_profile" {
 
 # Create Jenkins IAM user for CI/CD pipeline
 resource "aws_iam_user" "jenkins" {
-  name = "${var.environment}-jenkins-ci"
+  name = "devops-jenkins-user"
   
   tags = {
     Environment = var.environment
