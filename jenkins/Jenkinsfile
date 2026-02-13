@@ -85,8 +85,8 @@ pipeline {
             # Push immutable SHA tag — ignore if it already exists
             docker push ${ECR_REGISTRY}/modena-dev-backend:${IMAGE_TAG} || true
 
-            # Always push latest
-            docker push ${ECR_REGISTRY}/modena-dev-backend:latest
+            # Always push latest — ignore if already exists
+            docker push ${ECR_REGISTRY}/modena-dev-backend:latest || true
         '''
         }
      }
