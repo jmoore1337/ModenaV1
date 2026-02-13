@@ -38,8 +38,8 @@ vpc_cidr = "10.0.0.0/16"
 # EKS
 # ─────────────────────────────────────────────────────────────────────────────────
 eks_node_instance_types = ["t3.medium"]
-eks_node_desired_size   = 1
-eks_node_min_size       = 1
+eks_node_desired_size   = 2
+eks_node_min_size       = 2
 eks_node_max_size       = 3
 eks_node_disk_size      = 20
 eks_cluster_version     = "1.32"  # Step 2: upgrade 1.31 -> 1.32 (final, standard support)
