@@ -29,6 +29,11 @@ architecture-diagrams/
 **/WHAT-YOU*.md
 **/SECURITY-PIPELINE*.md
 
+#Docs
+**/docs/
+#Initial Setup
+**/initial-setup/
+
 # Keep these (actual infrastructure code):
 !requirements.txt
 !Dockerfile
