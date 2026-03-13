@@ -155,3 +155,77 @@ module "rds" {
   }
 }
 
+
+
+# ALB controller module block will go HERE ← We add this
+# ═══════════════════════════════════════════════════════════════════════════════
+# ALB CONTROLLER MODULE - AWS Load Balancer Controller via IRSA
+# ═══════════════════════════════════════════════════════════════════════════════
+# What it does:
+#   1. Creates IAM policy (ALB + EC2 permissions)
+#   2. Creates IAM role (OIDC federated principal)
+#   3. Creates Kubernetes service account (with IRSA annotation)
+#   4. Deploys Helm release (AWS LB controller pods)
+#
+# WHY we need it:
+#   Kubernetes Ingress resources don't create load balancers by themselves
+#   ALB controller watches for Ingress → automatically creates AWS ALBs
+#   Without this, pods are unreachable from outside the cluster
+#
+# Dependency chain:
+#   EKS cluster must exist (to get oidc_provider_arn)
+#   VPC must exist (to pass to controller)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module "alb_controller" {
+  source = "../../modules/load-balancer-controller"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Project identification
+  # ──────────────────────────────────────────────────────────────────────────
+  project_name = var.project_name  # → "modena"
+  environment  = var.environment   # → "dev"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # EKS Cluster info (needed for IAM role trust relationship)
+  # ──────────────────────────────────────────────────────────────────────────
+  eks_cluster_name = module.eks.cluster_name
+  # WHY? Controller needs to know which cluster to watch for Ingress resources
+  # Example: "modena-dev-eks"
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  # WHY? This is the CRITICAL piece for IRSA
+  # The IAM role will trust JWTs signed by this OIDC provider
+  # Example: "arn:aws:iam::730335375020:oidc-provider/oidc.eks.us-east-1..."
+  # This comes from module.eks (created during EKS cluster creation)
+
+  vpc_id = module.vpc.vpc_id
+  # WHY? Controller needs to know which VPC to create ALBs in
+  # Example: "vpc-0d1a2b3c4d5e6f7g8"
+
+  depends_on = [
+    module.eks,
+    module.iam,
+    module.secrets
+  ]
+  # WHY depends_on?
+  # Terraform must create EKS cluster FIRST
+  # → EKS creates OIDC provider
+  # → OIDC provider ARN is available
+  # → ALB controller can reference it in IAM role
+  # Without this, Terraform will try to create them in wrong order
+}
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# OUTPUT: ALB Controller Info (for debugging)
+# ─────────────────────────────────────────────────────────────────────────────────
+
+output "alb_controller_role_arn" {
+  description = "IAM role ARN for ALB controller (IRSA)"
+  value       = module.alb_controller.alb_controller_role_arn
+}
+
+output "alb_controller_service_account" {
+  description = "Kubernetes service account name"
+  value       = module.alb_controller.service_account_name
+}
