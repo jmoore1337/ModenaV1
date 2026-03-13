@@ -61,3 +61,37 @@ provider "aws" {
     }
   }
 }
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# KUBERNETES PROVIDER CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+# Authenticates to EKS cluster for creating K8s resources (service accounts, etc.)
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────────
+# HELM PROVIDER CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────────
+# Package manager for Kubernetes - installs Helm charts (like ALB controller)
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
+  }
+}
